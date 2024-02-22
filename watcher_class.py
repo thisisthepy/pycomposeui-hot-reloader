@@ -11,10 +11,14 @@ class HotReloader:
         else:
             self.target_path = os.path.abspath(os.getcwd())
         
-        #make the class "ConfigParser" to set the config.ini file.
+        #make the class "ConfigParser" to create the config.ini file.
         self.config_file = configparser.ConfigParser()
-        #read the file.
-        self.check_repos()
+        self.config_file.read(f'{self.target_path}\\config.ini')
+        self.config_file['DEFAULT'] = {"textfile" : "config.ini"}
+        self.config_file['CONFIG_VERSION'] = {"last_config" : "YYMMDD-hhmmss"}
+
+        with open(f'{self.target_path}\\config.ini', "w") as f: 
+            self.config_file.write(f)
 
     def check_repos(self):
         self.config_file.read(f'{self.target_path}\\config.ini')
@@ -43,13 +47,13 @@ class HotReloader:
                 file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                 tmp_section['name'] = file_name
                 tmp_section['extension'] = file_ext
-                tmp_section['last_modified'] = str(file_last_modified)
                 tmp_section['type'] = file_type
                 tmp_section['path'] = f'{self.target_path}\\{file}'
+                tmp_section['last_modified'] = str(file_last_modified)
 
             CONFIG_VERSION["last_config"] = str(datetime.now()) #set the Key - Value
 
-            with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
+            with open(f'{self.target_path}\\config.ini', "w") as f: #save them
                 self.config_file.write(f)
         else: #Already initialized config.ini
             files = os.listdir(self.target_path)
@@ -86,12 +90,12 @@ class HotReloader:
                     file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                     tmp_section['name'] = file_name
                     tmp_section['extension'] = file_ext
-                    tmp_section['last_modified'] = str(file_last_modified)
                     tmp_section['type'] = file_type
                     tmp_section['path'] = f'{self.target_path}\\{file}'
+                    tmp_section['last_modified'] = str(file_last_modified)
 
             CONFIG_VERSION["last_config"] = str(datetime.now())
-            with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
+            with open(f'{self.target_path}\\config.ini', "w") as f: #save them
                 self.config_file.write(f)
     def check_deleted(self):
         current_config_sections = self.config_file.sections()
@@ -101,13 +105,13 @@ class HotReloader:
         if len(deleted_files) > 0:
             print("Some deleted files are found!")
             for file in deleted_files:
-                with open(f'{self.target_path}\\\config.ini', "r") as f: #read ini file
+                with open(f'{self.target_path}\\config.ini', "r") as f: #read ini file
                     self.config_file.read_file(f)
                 self.config_file.remove_section(file)
                 
                 print(f"We've just deleted {file}.")
 
-                with open(f'{self.target_path}\\\config.ini', "w") as f: #save change
+                with open(f'{self.target_path}\\config.ini', "w") as f: #save change
                     self.config_file.write(f)
                 
 
