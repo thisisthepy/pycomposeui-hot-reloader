@@ -34,7 +34,7 @@ class HotReloader:
                     file_ext = 'Null'
                 else:
                     file_name = 'Null'
-                    file_ext = file_titles[0]
+                    file_ext = file[1:]
                 #Distinguish between file and Directory
                 if os.path.isdir(file):
                     file_type = 'Directory'
@@ -45,6 +45,7 @@ class HotReloader:
                 tmp_section['extension'] = file_ext
                 tmp_section['last_modified'] = str(file_last_modified)
                 tmp_section['type'] = file_type
+                tmp_section['path'] = f'{self.target_path}\\{file}'
 
             CONFIG_VERSION["last_config"] = str(datetime.now()) #set the Key - Value
 
@@ -76,7 +77,7 @@ class HotReloader:
                         file_ext = 'Null'
                     else:
                         file_name = 'Null'
-                        file_ext = file_titles[0]
+                        file_ext = file[1:]
 
                     if os.path.isdir(file):
                         file_type = 'Directory'
@@ -87,6 +88,7 @@ class HotReloader:
                     tmp_section['extension'] = file_ext
                     tmp_section['last_modified'] = str(file_last_modified)
                     tmp_section['type'] = file_type
+                    tmp_section['path'] = f'{self.target_path}\\{file}'
 
             CONFIG_VERSION["last_config"] = str(datetime.now())
             with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
