@@ -25,9 +25,8 @@ class HotReloader:
                 self.config_file.add_section(file)
                 tmp_section = self.config_file[file]
                 file_titles = file.split('.')
-
+                #Defining the name and extension of files
                 if (file_titles[0] is not '') and (len(file_titles) is 2) :
-                    print(file_titles)
                     file_name, file_ext = file_titles
                 elif not '.' in file:
                     file_name = file
@@ -35,11 +34,16 @@ class HotReloader:
                 else:
                     file_name = 'Null'
                     file_ext = file_titles[0]
-
+                #Distinguish between file and Directory
+                if os.path.isdir(file):
+                    file_type = 'Directory'
+                else:
+                    file_type = 'File'
                 file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                 tmp_section['name'] = file_name
                 tmp_section['extension'] = file_ext
                 tmp_section['last_modified'] = str(file_last_modified)
+                tmp_section['type'] = file_type
 
             CONFIG_VERSION["last_config"] = str(datetime.now()) #set the Key - Value
 
@@ -59,12 +63,12 @@ class HotReloader:
                         tmp_section['last_modified'] = str(file_last_modified)
 
                 except configparser.NoSectionError: #if user created new file
+                    print(f'A new file named {file} is created!')
                     self.config_file.add_section(file)
                     tmp_section = self.config_file[file]
                     file_titles = file.split('.')
 
                     if (file_titles[0] is not '') and (len(file_titles) is 2) :
-                        print(file_titles)
                         file_name, file_ext = file_titles
                     elif not '.' in file:
                         file_name = file
@@ -73,10 +77,15 @@ class HotReloader:
                         file_name = 'Null'
                         file_ext = file_titles[0]
 
+                    if os.path.isdir(file):
+                        file_type = 'Directory'
+                    else:
+                        file_type = 'File'
                     file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                     tmp_section['name'] = file_name
                     tmp_section['extension'] = file_ext
                     tmp_section['last_modified'] = str(file_last_modified)
+                    tmp_section['type'] = file_type
 
             CONFIG_VERSION["last_config"] = str(datetime.now())
             with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
