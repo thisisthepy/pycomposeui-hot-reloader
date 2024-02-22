@@ -16,6 +16,7 @@ def load_modules(module_names):
             module = importlib.import_module(module_name)
             print(f"Loaded module: {module_name}")
             modules[module_name] = module
+            
 
     return modules
 
@@ -35,6 +36,8 @@ def main():
             # Check for changes in the modules and reload if necessary
             for module_name in module_names:
                 module_path = f"{module_name}.py"
+                print(f"The Time {os.path.getmtime(module_path) }")
+                print(f"And Then {os.path.getmtime(modules[module_name].__file__)}")
                 if os.path.getmtime(module_path) >  os.path.getmtime(modules[module_name].__file__):
                     print(f"Detected change in {module_name}. Reloading...")
                     modules = load_modules(module_names)
