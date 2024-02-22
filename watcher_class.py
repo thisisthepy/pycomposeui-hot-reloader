@@ -31,7 +31,7 @@ class HotReloader:
                 tmp_section = self.config_file[file]
                 file_titles = file.split('.')
                 #Defining the name and extension of files
-                if (file_titles[0] is not '') and (len(file_titles) is 2) :
+                if not (file_titles[0] == '') and (len(file_titles) == 2) :
                     file_name, file_ext = file_titles
                 elif not '.' in file:
                     file_name = file
@@ -74,7 +74,7 @@ class HotReloader:
                     tmp_section = self.config_file[file]
                     file_titles = file.split('.')
 
-                    if (file_titles[0] is not '') and (len(file_titles) is 2) :
+                    if not (file_titles[0] == '') and (len(file_titles) == 2) :
                         file_name, file_ext = file_titles
                     elif not '.' in file:
                         file_name = file
