@@ -1,5 +1,6 @@
 import configparser
 import os
+import time
 from datetime import datetime 
 
 class HotReloader:
@@ -62,7 +63,7 @@ class HotReloader:
                         file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                         tmp_section['last_modified'] = str(file_last_modified)
 
-                except configparser.NoSectionError: #if user created new file
+                except configparser.NoSectionError and KeyError: #if user created new file
                     print(f'A new file named {file} is created!')
                     self.config_file.add_section(file)
                     tmp_section = self.config_file[file]
@@ -90,11 +91,32 @@ class HotReloader:
             CONFIG_VERSION["last_config"] = str(datetime.now())
             with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
                 self.config_file.write(f)
+    def check_deleted(self):
+        current_config_sections = self.config_file.sections()
+        current_files = os.listdir(self.target_path) + ["DEFAULT", "CONFIG_VERSION"]
+        
+        deleted_files = list(set(current_config_sections) - set(current_files)) #Check if there is already deleted item in the config.ini
+        if len(deleted_files) > 0:
+            print("Some deleted files are found!")
+            for file in deleted_files:
+                with open(f'{self.target_path}\\\config.ini', "r") as f: #read ini file
+                    self.config_file.read_file(f)
+                self.config_file.remove_section(file)
+                
+                print(f"We've just deleted {file}.")
 
+                with open(f'{self.target_path}\\\config.ini', "w") as f: #save change
+                    self.config_file.write(f)
+                
 
 
 
 if __name__ == "__main__":
    #module_names = ["sample1", "sample2"]  # Add all your module names here
     hot_reloader = HotReloader()
-    #hot_reloader.run()
+
+    while True:
+        hot_reloader.check_repos()
+        hot_reloader.check_deleted()
+
+        time.sleep(10) #Slow Down
