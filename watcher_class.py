@@ -1,4 +1,3 @@
-import importlib
 import configparser
 import os
 from datetime import datetime 
@@ -15,11 +14,12 @@ class HotReloader:
         self.config_file = configparser.ConfigParser()
         #read the file.
         self.check_repos()
+
     def check_repos(self):
         self.config_file.read(f'{self.target_path}\\config.ini')
         
-        CONFIG_VERSION = self.config_file["CONFIG_VERSION"] #Selecr the section
-        if CONFIG_VERSION["last_config"] == 'YYMMDD-hhmmss':#if it is the first time to checking
+        CONFIG_VERSION = self.config_file["CONFIG_VERSION"] #Select the section
+        if CONFIG_VERSION["last_config"] == 'YYMMDD-hhmmss':#if it is the first time to check
             files = os.listdir(self.target_path)
             for file in files:
                 self.config_file.add_section(file)
@@ -39,13 +39,50 @@ class HotReloader:
                 file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
                 tmp_section['name'] = file_name
                 tmp_section['extension'] = file_ext
-                print(file_last_modified, type(file_last_modified))
                 tmp_section['last_modified'] = str(file_last_modified)
 
             CONFIG_VERSION["last_config"] = str(datetime.now()) #set the Key - Value
 
             with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
                 self.config_file.write(f)
+        else: #Already initialized config.ini
+            files = os.listdir(self.target_path)
+            for file in files:
+                try:
+                    tmp_section = self.config_file[file]
+                    #if there is an initialized file on the config.ini
+                    saved_last_modified = tmp_section['last_modified'] 
+                    if os.path.getmtime(f'{self.target_path}\\{file}') > float(saved_last_modified):
+                        #run what we intended after catching the changes of files.
+                        print(f'{file} has just been changed!')
+                        file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
+                        tmp_section['last_modified'] = str(file_last_modified)
+
+                except configparser.NoSectionError: #if user created new file
+                    self.config_file.add_section(file)
+                    tmp_section = self.config_file[file]
+                    file_titles = file.split('.')
+
+                    if (file_titles[0] is not '') and (len(file_titles) is 2) :
+                        print(file_titles)
+                        file_name, file_ext = file_titles
+                    elif not '.' in file:
+                        file_name = file
+                        file_ext = 'Null'
+                    else:
+                        file_name = 'Null'
+                        file_ext = file_titles[0]
+
+                    file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
+                    tmp_section['name'] = file_name
+                    tmp_section['extension'] = file_ext
+                    tmp_section['last_modified'] = str(file_last_modified)
+
+            CONFIG_VERSION["last_config"] = str(datetime.now())
+            with open(f'{self.target_path}\\\config.ini', "w") as f: #save them
+                self.config_file.write(f)
+
+
 
 
 if __name__ == "__main__":
