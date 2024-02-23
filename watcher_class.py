@@ -20,6 +20,31 @@ class HotReloader:
         with open(f'{self.target_path}\\config.ini', "w") as f: 
             self.config_file.write(f)
 
+    def init_repos(self, file):
+        self.config_file.add_section(file)
+        tmp_section = self.config_file[file]
+        file_titles = file.split('.')
+        #Defining the name and extension of files
+        if not (file_titles[0] == '') and (len(file_titles) == 2) :
+            file_name, file_ext = file_titles
+        elif not '.' in file:
+            file_name = file
+            file_ext = 'Null'
+        else:
+            file_name = 'Null'
+            file_ext = file[1:]
+        #Distinguish between file and Directory
+        if os.path.isdir(file):
+            file_type = 'Directory'
+        else:
+            file_type = 'File'
+        file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
+        tmp_section['name'] = file_name
+        tmp_section['extension'] = file_ext
+        tmp_section['type'] = file_type
+        tmp_section['path'] = f'{self.target_path}\\{file}'
+        tmp_section['last_modified'] = str(file_last_modified)
+
     def check_repos(self):
         self.config_file.read(f'{self.target_path}\\config.ini')
         
@@ -27,29 +52,7 @@ class HotReloader:
         if CONFIG_VERSION["last_config"] == 'YYMMDD-hhmmss':#if it is the first time to check
             files = os.listdir(self.target_path)
             for file in files:
-                self.config_file.add_section(file)
-                tmp_section = self.config_file[file]
-                file_titles = file.split('.')
-                #Defining the name and extension of files
-                if not (file_titles[0] == '') and (len(file_titles) == 2) :
-                    file_name, file_ext = file_titles
-                elif not '.' in file:
-                    file_name = file
-                    file_ext = 'Null'
-                else:
-                    file_name = 'Null'
-                    file_ext = file[1:]
-                #Distinguish between file and Directory
-                if os.path.isdir(file):
-                    file_type = 'Directory'
-                else:
-                    file_type = 'File'
-                file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
-                tmp_section['name'] = file_name
-                tmp_section['extension'] = file_ext
-                tmp_section['type'] = file_type
-                tmp_section['path'] = f'{self.target_path}\\{file}'
-                tmp_section['last_modified'] = str(file_last_modified)
+                self.init_repos(file)
 
             CONFIG_VERSION["last_config"] = str(datetime.now()) #set the Key - Value
 
@@ -70,29 +73,7 @@ class HotReloader:
 
                 except configparser.NoSectionError and KeyError: #if user created new file
                     print(f'A new file named {file} is created!')
-                    self.config_file.add_section(file)
-                    tmp_section = self.config_file[file]
-                    file_titles = file.split('.')
-
-                    if not (file_titles[0] == '') and (len(file_titles) == 2) :
-                        file_name, file_ext = file_titles
-                    elif not '.' in file:
-                        file_name = file
-                        file_ext = 'Null'
-                    else:
-                        file_name = 'Null'
-                        file_ext = file[1:]
-
-                    if os.path.isdir(file):
-                        file_type = 'Directory'
-                    else:
-                        file_type = 'File'
-                    file_last_modified = os.path.getmtime(f'{self.target_path}\\{file}')
-                    tmp_section['name'] = file_name
-                    tmp_section['extension'] = file_ext
-                    tmp_section['type'] = file_type
-                    tmp_section['path'] = f'{self.target_path}\\{file}'
-                    tmp_section['last_modified'] = str(file_last_modified)
+                    self.init_repos(file)
 
             CONFIG_VERSION["last_config"] = str(datetime.now())
             with open(f'{self.target_path}\\config.ini', "w") as f: #save them
