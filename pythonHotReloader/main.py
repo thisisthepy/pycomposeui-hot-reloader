@@ -28,11 +28,11 @@ app = FastAPI()
 CURRENT_EVENT = None
 INFORMATION_SENT = False
 
-#Path to be watched, the default path is current directory.
+# Path to be watched, the default path is current directory.
 DIRECTORY_TO_WATCH = os.getcwd() + "\\app\\src"
 ZIPFILES_DIR = os.getcwd() + "\\zipFiles"
 
-#Make a list of OS Directories and a list of directories which are not tracked.
+# Make a list of OS Directories and a list of directories which are not tracked.
 OS_LIST = []
 EXCEPTION_LIST = ["common", "__pycache__", "zipFiles"]
 
@@ -48,7 +48,7 @@ class CustomHandler(FileSystemEventHandler):
     def compress_zip(self, target_OS: str, TARGET_DIR: str = DIRECTORY_TO_WATCH, DESTINATION_DIR: str = os.getcwd() + "\\zipFiles"):
         '''Make a zipfile which is composed with files in 'common' and target directory.'''
         if not os.path.exists(DESTINATION_DIR):
-            #if there is no directory in the path, exspecially while initializing, make the directory which will store the zipFiles
+            # if there is no directory in the path, exspecially while initializing, make the directory which will store the zipFiles
             os.mkdir(DESTINATION_DIR)
 
         FILE_NAME = f'{DESTINATION_DIR}\\{target_OS}.zip'
@@ -67,12 +67,12 @@ class CustomHandler(FileSystemEventHandler):
         
         if event.event_type != 'opened' and event.event_type != 'closed':
             if not event.is_directory: 
-                #Take actions for tracking changes of a file.
+                # Take actions for tracking changes of a file.
                 crnt_path = DIRECTORY_TO_WATCH + "\\"
                 event_dir = event.src_path.replace(crnt_path, '')
                 if "\\" in event_dir:
-                    #exract the OS tag of file
-                    #Save the directory's name, not file, as the event_dir.
+                    # exract the OS tag of file
+                    # Save the directory's name, not file, as the event_dir.
                     event_dir = event_dir.split('\\')[0]
                 else:
                     event_dir = 'src'
@@ -95,8 +95,8 @@ class CustomHandler(FileSystemEventHandler):
                 INFORMATION_SENT = False  # Reset the flag when a new event occurs.
             
             else:
-                #If you want to make new OS, Take actions about this procedure.
-                #The below code is just for an example.
+                # If you want to make new OS, Take actions about this procedure.
+                # The below code is just for an example.
 
                 print(f'A New Directory has been founded, whose path is {event.src_path}.')
 
@@ -105,7 +105,7 @@ def start_monitoring(directory_to_watch, event_finished):
     event_handler = CustomHandler()
     observer = Observer()
     observer.schedule(event_handler, directory_to_watch, recursive=True)
-    #'Schedule' method came from class, BaseObserver in observers.api
+    # 'Schedule' method came from class, BaseObserver in observers.api
     observer.start()
     event_finished.set()  # Signal that the event handling is finished.
 
@@ -116,7 +116,7 @@ def startup_event():
 
     event_finished = threading.Event()  # Event to synchronize threads
     thread = threading.Thread(target=start_monitoring, args=(DIRECTORY_TO_WATCH, event_finished))
-    #This procedure runs the function named start_monitoring in a sub-thread.
+    # This procedure runs the function named start_monitoring in a sub-thread.
     thread.start()
     event_finished.wait() # Wait for the event handling to finish before starting the next thread.
 
