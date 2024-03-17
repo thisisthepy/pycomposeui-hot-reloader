@@ -6,6 +6,7 @@ import os
 import zipfile
 import asyncio
 import threading
+import uvicorn
 
 from watchdog.observers import Observer
 '''In main.py, this module will use WindowsApiObserver 
@@ -138,20 +139,22 @@ async def websocket_endpoint(ws: WebSocket):
     except WebSocketDisconnect as e:
         print(f"WebSocket closed with code {e.code}: {e.reason}")
     
-@app.get("/IOS")
+@app.get("/IOS.zip")
 async def zip():
-    response = FileResponse(path= f"{ZIPFILES_DIR}/IOS.zip", filename="IOS.zip")
-    return response
+    '''Enable IOS client to download the newest zip file.'''
+    return FileResponse(path= f"{ZIPFILES_DIR}/IOS.zip", filename="IOS.zip")
        
-@app.get("/Windows")
+@app.get("/Windows.zip")
 async def zip():
-    response = FileResponse(path= f"{ZIPFILES_DIR}/Windows.zip", filename="Windows.zip")
-    return response    
+    '''Enable Windows client to download the newest zip file.'''
+    return FileResponse(path= f"{ZIPFILES_DIR}/Windows.zip", filename="Windows.zip")
+       
 
-@app.get("/Android")
+@app.get("/Android.zip")
 async def zip():
-    response = FileResponse(path= f"{ZIPFILES_DIR}/Android.zip", filename="Android.zip")
-    return response 
+    '''Enable Android client to download the newest zip file.'''
+    return FileResponse(path= f"{ZIPFILES_DIR}/Android.zip", filename="Android.zip")
+    
 
 @app.get("/")
 async def root():
@@ -176,6 +179,17 @@ async def root():
 <body>
     <h1>File Watcher</h1>
     <ul id="eventsList"></ul>
+    <h2>Download Zip Files:</h2>
+    <ul>
+        <li><a href="/IOS.zip">Download IOS.zip</a></li>
+        <li><a href="/Windows.zip">Download Windows.zip</a></li>
+        <li><a href="/Android.zip">Download Android.zip</a></li>
+    </ul>
 </body>
 </html>
     """)
+
+# Run uvicorn
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8000)
