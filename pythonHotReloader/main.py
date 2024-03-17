@@ -1,6 +1,5 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import HTMLResponse
-
 from watchdog.observers import Observer
 '''In main.py, this module will use WindowsApiObserver 
 '''
@@ -22,10 +21,10 @@ import zipfile
 
 app = FastAPI()
 
-# This object will store filesystem change events.
+# Global variables to store filesystem change events and upload status.
 CURRENT_EVENT = None
-# Flag to indicate whether the information has been sent.
 INFORMATION_SENT = False
+
 #Path to be watched, the default path is current directory.
 DIRECTORY_TO_WATCH = os.getcwd() + "\\app\\src"
 #Make list of OS Directories.
@@ -33,19 +32,17 @@ OS_LIST = []
 #the list of directories which are not tracked.
 EXCEPTION_LIST = ["common", "__pycache__", "zipFiles"]
 
+# Populate the OS_LIST with directories that are not in the EXCEPTION_LIST.
 for item in os.listdir(DIRECTORY_TO_WATCH):
     sub_folder = os.path.join(DIRECTORY_TO_WATCH, item)
     print(f'Checking current directories.... : {sub_folder}')
-    if os.path.isdir(sub_folder): # Check if sub_folder is a directory.
-        if item not in EXCEPTION_LIST:
-            OS_LIST.append(item)
+    if os.path.isdir(sub_folder) and item not in EXCEPTION_LIST:
+        OS_LIST.append(item)
 
 class CustomHandler(FileSystemEventHandler):
-    '''Except Opened or Closed events, This class make the object to track the Events using watchdog.FileSystemEventHandler.
-    '''
+    '''Class to handle filesystem change events'''
     def compress_zip(self, target_OS: str, TARGET_DIR: str = DIRECTORY_TO_WATCH, DESTINATION_DIR: str = os.getcwd() + "\\zipFiles"):
-        '''Make a zipfile which is composed with files in 'common' and target directory.
-        '''
+        '''Make a zipfile which is composed with files in 'common' and target directory.'''
         if not os.path.exists(DESTINATION_DIR):
             #if there is no directory in the path, exspecially while initializing, make the directory which will store the zipFiles
             os.mkdir(DESTINATION_DIR)
@@ -53,20 +50,15 @@ class CustomHandler(FileSystemEventHandler):
         FILE_NAME = f'{DESTINATION_DIR}\\{target_OS}.zip'
         zipped_dir = zipfile.ZipFile(FILE_NAME, 'w')
 
-        for (path, dir, files) in os.walk(TARGET_DIR):
-            print(f'the current path is {path}')    
+        for (path, _, files) in os.walk(TARGET_DIR):
             if target_OS in path or 'common' in path:
                 os.chdir(TARGET_DIR)
-                print(f'the current dir is {dir}')
-                print(f'the current files is {files}')
                 for file in files:
-                    print(file)
                     zipped_dir.write(os.path.join(os.path.relpath(path, TARGET_DIR), file), compress_type=zipfile.ZIP_DEFLATED)
         zipped_dir.close()
 
     def on_any_event(self, event):
-        '''If there is a new event in watched directory, this function saves the event in the list objective named "CURRENT_EVENT".
-        '''
+        '''Handles any filesystem event Except Opening and Closing'''
         global CURRENT_EVENT, INFORMATION_SENT, OS_LIST
         
         if event.event_type != 'opened' and event.event_type != 'closed':
@@ -80,6 +72,7 @@ class CustomHandler(FileSystemEventHandler):
                     event_dir = event_dir.split('\\')[0]
                 else:
                     event_dir = 'src'
+
                 if event_dir != 'zipFiles':
                     CURRENT_EVENT = [event.src_path, event_dir, event.event_type, event.is_directory]
                 
@@ -88,7 +81,6 @@ class CustomHandler(FileSystemEventHandler):
                         self.compress_zip(target_OS = OS)
                 
                 elif event_dir in OS_LIST:
-                    print(f'event_dir is {event_dir}')
                     self.compress_zip(target_OS = event_dir)
                 
                 elif event_dir != 'zipFiles':
@@ -105,8 +97,7 @@ class CustomHandler(FileSystemEventHandler):
                 print(f'A New Directory has been founded, whose path is {event.src_path}.')
 
 def start_monitoring(directory_to_watch, event_finished):
-    '''Using CusomHandler Class, This function starts to track the directory.
-    '''
+    '''Starts tracking the directory'''
     event_handler = CustomHandler()
     observer = Observer()
     observer.schedule(event_handler, directory_to_watch, recursive=True)
@@ -127,7 +118,7 @@ def startup_event():
 
 @app.websocket("/ws")
 async def websocket_endpoint(ws: WebSocket):
-    '''Setting up a WebSocket endpoint and establish a connection on the client side.
+    '''Set up a WebSocket endpoint and establish a connection on the client side.
     This Function Does Three processes When the WebSocket was called.
             1. Await the change of files
             2. send the changed Information to the client 
