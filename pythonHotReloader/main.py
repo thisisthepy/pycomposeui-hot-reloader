@@ -1,5 +1,12 @@
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-from fastapi.responses import HTMLResponse
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, File, UploadFile
+from fastapi.responses import HTMLResponse, FileResponse
+from typing import List
+import shutil
+import os
+import zipfile
+import asyncio
+import threading
+
 from watchdog.observers import Observer
 '''In main.py, this module will use WindowsApiObserver 
 '''
@@ -13,11 +20,6 @@ from watchdog.events import FileSystemEventHandler
             EVENT_TYPE_CLOSED: self.on_closed,
             EVENT_TYPE_OPENED: self.on_opened,
 '''
-import asyncio
-import threading
-import os
-import zipfile
-
 
 app = FastAPI()
 
@@ -27,9 +29,10 @@ INFORMATION_SENT = False
 
 #Path to be watched, the default path is current directory.
 DIRECTORY_TO_WATCH = os.getcwd() + "\\app\\src"
-#Make list of OS Directories.
+ZIPFILES_DIR = os.getcwd() + "\\zipFiles"
+
+#Make a list of OS Directories and a list of directories which are not tracked.
 OS_LIST = []
-#the list of directories which are not tracked.
 EXCEPTION_LIST = ["common", "__pycache__", "zipFiles"]
 
 # Populate the OS_LIST with directories that are not in the EXCEPTION_LIST.
@@ -134,6 +137,21 @@ async def websocket_endpoint(ws: WebSocket):
             await asyncio.sleep(1)
     except WebSocketDisconnect as e:
         print(f"WebSocket closed with code {e.code}: {e.reason}")
+    
+@app.get("/IOS")
+async def zip():
+    response = FileResponse(path= f"{ZIPFILES_DIR}/IOS.zip", filename="IOS.zip")
+    return response
+       
+@app.get("/Windows")
+async def zip():
+    response = FileResponse(path= f"{ZIPFILES_DIR}/Windows.zip", filename="Windows.zip")
+    return response    
+
+@app.get("/Android")
+async def zip():
+    response = FileResponse(path= f"{ZIPFILES_DIR}/Android.zip", filename="Android.zip")
+    return response 
 
 @app.get("/")
 async def root():
