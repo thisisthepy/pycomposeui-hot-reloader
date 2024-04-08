@@ -17,6 +17,14 @@ dependencies {
 tasks.test {
     useJUnitPlatform()
 }
+
 kotlin {
     jvmToolchain(21)
+
+    sourceSets {
+        val main by getting {
+            kotlin.srcDirs("src/main")
+            resources.srcDirs("res")
+        }
+    }
 }

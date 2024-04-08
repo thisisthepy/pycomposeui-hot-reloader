@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+    <html>
+    <head>
+        <title>File Watcher</title>
+        <script>
+            var ws = new WebSocket("ws://localhost:8000/ws");
+            ws.onmessage = function(event) {
+                var eventsList = document.getElementById("eventsList");
+                var newEvent = document.createElement("li");
+                console.log(event.data);
+                newEvent.textContent = event.data;
+                eventsList.appendChild(newEvent);
+
+            };
+        </script>
+    </head>
+    <body>
+        <h1>File Watcher</h1>
+        <ul id="eventsList"></ul>
+        <h2>Download Zip Files:</h2>
+        <ul>
+            <li><a href="/IOS.zip">Download IOS.zip</a></li>
+            <li><a href="/Windows.zip">Download Windows.zip</a></li>
+            <li><a href="/Android.zip">Download Android.zip</a></li>
+        </ul>
+    </body>
+</html>
