@@ -13,9 +13,7 @@ setup(
     install_requires=[
         "fastapi",
         "watchdog",
-        "zipfile",
         "uvicorn",
-        "threading",
         "asyncio"
     ]
 )
