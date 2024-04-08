@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="zipFiles">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/pythonHotReloader/zipFiles/Android.zip!/" />
+      <root url="jar://$PROJECT_DIR$/pythonHotReloader/zipFiles/IOS.zip!/" />
+      <root url="jar://$PROJECT_DIR$/pythonHotReloader/zipFiles/Windows.zip!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES />
+  </library>
+</component>
