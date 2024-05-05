@@ -1,81 +1,127 @@
-import os
-from watchdog.observers import Observer
+import asyncio
+
 from watchdog.events import FileSystemEventHandler
+from watchdog.observers import Observer
+import os
+import zipfile
 
 
-class FileModificationDetectHandler(FileSystemEventHandler):
-    """Class to handle filesystem change events."""
+class FileModificationEventPublisher(FileSystemEventHandler):
+    """Class to detect filesystem change events and Create its message to channel"""
     def __init__(self,
-                 os_list, directory_to_watch, zipfile_dir):
+                 os_list: list, directory_to_watch: str, zipfile_dir: str,
+                 event_channel):
         super().__init__()
         self.os_list = os_list
         self.directory_to_watch = directory_to_watch
         self.zipfile_dir = zipfile_dir
-
-    def on_new_os(self, event):
-        """This method is for the situation when entered a new OS which is not in OS_LIST"""
-        # The below code is just for an example.
-        print(f'A New Directory has been founded, whose path is {event.src_path}.')
-
-    def make_zip(self,
-                 target_os: str, directory_to_watch: str,
-                 zipfile_dir: str):
-        """Make a zipfile which is composed with files in 'common' and target directory."""
-        zipfile_dir += '\\zip_files'
-        if not os.path.exists(zipfile_dir):
-            # if there is no directory in the path, especially initializing, make the directory to store the zipFiles
-            os.mkdir(zipfile_dir)
-
-        FILE_NAME = f'{zipfile_dir}\\{target_os}.zip'
-        zipped_dir = zipfile.ZipFile(FILE_NAME, 'w')
-
-        for (path, _, files) in os.walk(directory_to_watch):
-            if target_os in path or 'commonMain' in path:
-                os.chdir(directory_to_watch)
-                for file in files:
-                    if "~" in path:
-                        pass
-                    else:
-                        zipped_dir.write(os.path.join(
-                            os.path.relpath(path, directory_to_watch), file),
-                            compress_type=zipfile.ZIP_DEFLATED)
-        zipped_dir.close()
+        self.event_channel = event_channel
+        # self.current_event = None
+        self.current_event = asyncio.Future()
 
     def on_any_event(self, event):
         """Handles any filesystem event Except Opening and Closing"""
-        global INFORMATION_SENT
         if event.event_type != 'opened' and event.event_type != 'closed':
-            if not ('~' in event.src_path and event.event_type != 'deleted'):
-                global CURRENT_EVENT
+            if not '~' in event.src_path:
                 # Take actions for tracking changes of a file.
-                current_path = self.directory_to_watch + "\\"
-                event_dir = event.src_path.replace(current_path, '')
+                print(f'Changed file information: {event.src_path}')
+                print(f'directory_to_watch: {self.directory_to_watch}')
+                print(f'The OS which has been modified : [{event_dir}]')
 
-                if "\\" in event_dir:
-                    # extract the OS tag of file
-                    # Save the directory's name, not file, as the event_dir.
-                    event_dir = event_dir.split('\\')[0].replace('Main', '')
+                rel_event_dir = event.src_path.replace(current_path, '')[1:]
+                event_dir = 'common'
+                for os in self.os_list:
+                    if os in rel_event_dir:
+                        event_dir = os
+
+                self.current_event.set_result({'src_path': event.src_path,
+                                               'os_tag': event_dir,
+                                               'event_type': event.event_type,
+                                               'dir_flag': event.is_directory})
+                if event_dir in self.os_list:
+                    self.event_channel.trigger_event(event_dir,
+                                                     target_os=event_dir,
+                                                     directory_to_watch=self.directory_to_watch,
+                                                     zipfile_dir=self.zipfile_dir)
+                elif event_dir == 'common':
+                    for os in self.os_list:
+                        self.event_channel.trigger_event(os,
+                                                         target_os=os,
+                                                         directory_to_watch=self.directory_to_watch,
+                                                         zipfile_dir=self.zipfile_dir)
+
                 else:
-                    event_dir.replace('Main', '')
-
-                if event_dir != 'zip_files':
-                    CURRENT_EVENT = [event.src_path, event_dir, event.event_type, event.is_directory]
-
-                if event_dir == 'common' or event_dir == 'commonMain':
-                    for OS in self.os_list:
-                        self.make_zip(target_os=OS,
-                                      directory_to_watch=self.directory_to_watch, zipfile_dir=self.zipfile_dir)
-                elif event_dir in self.os_list:
-                    self.make_zip(target_os=event_dir,
-                                  directory_to_watch=self.directory_to_watch, zipfile_dir=self.zipfile_dir)
-                elif event.is_directory:
-                    print(f'event_dir is {event_dir}, and event_type is {event.event_type}.')
-
-                else:
-                    print(f'[Unnamed OS Error] The directory that has not been saved as OS was found: {event_dir}.')
+                    print(f'[Unknown OS Error] The directory that has not been saved as OS was found: {event_dir}.')
                     print(f'The Tracked file is {event.src_path}.')
                     print(f'The event type is {event.event_type}.')
-                    # If you want to make new OS, Take actions about this procedure.
-                    self.on_new_os(event=event)
 
-                INFORMATION_SENT = False  # Reset the flag when a new event occurs.
+
+class FileModificationEventChannel:
+    def __init__(self):
+        self.event_handlers = {}
+        self.current_event = None
+
+    def add_event_handler(self, event_name, event_handler):
+        if event_name not in self.event_handlers:
+            self.event_handlers[event_name] = []
+        self.event_handlers[event_name].append(event_handler)
+
+    def trigger_event(self, event_name, *args, **kwargs):
+        if event_name in self.event_handlers:
+            for handler in self.event_handlers[event_name]:
+                handler(*args, **kwargs)
+        else:
+            print(f'The event ({event_name}) is not on the list of event handlers.')
+            print(f'Please check the process to create list. The current list is {self.event_handlers.keys()}.')
+
+
+def make_zip(target_os: str, directory_to_watch: str, zipfile_dir: str):
+    """Make a zipfile which is composed with files in 'common' and target directory."""
+
+    if "\\" in zipfile_dir:
+        zipfile_dir += "\\zip_files"
+        file_name = f'{zipfile_dir}\\{target_os}.zip'
+
+    elif "/" in zipfile_dir:
+        zipfile_dir += "/zip_files"
+        file_name = f'{zipfile_dir}/{target_os}.zip'
+
+    if not os.path.exists(zipfile_dir):
+        # if there is no directory in the path, especially initializing, make the directory to store the zipFiles
+        os.mkdir(zipfile_dir)
+
+
+    zipped_dir = zipfile.ZipFile(file_name, 'w')
+
+    for (path, _, files) in os.walk(directory_to_watch):
+        if target_os in path or 'commonMain' in path:
+            os.chdir(directory_to_watch)
+            for file in files:
+                if "~" in path:
+                    pass
+                else:
+                    zipped_dir.write(os.path.join(
+                        os.path.relpath(path, directory_to_watch), file),
+                        compress_type=zipfile.ZIP_DEFLATED)
+    zipped_dir.close()
+
+    print(f'INFO:  Packaging the zipped files for {target_os} has just been completed!')
+
+
+async def start_monitoring(os_list: list, directory_to_watch: str, zipfile_dir: str):
+    """Starts tracking the directory"""
+
+    event_channel = FileModificationEventChannel()
+
+    for os_name in os_list:
+        event_channel.add_event_handler(os_name, make_zip)
+
+    # Create the event handler with the callback function.
+    event_handler = FileModificationEventPublisher(os_list=os_list, directory_to_watch=directory_to_watch,
+                                                   zipfile_dir=zipfile_dir, event_channel=event_channel)
+
+    observer = Observer()
+    observer.schedule(event_handler, directory_to_watch, recursive=True)
+    observer.start()
+
+    return await event_handler.current_event
