@@ -1,4 +1,4 @@
-from pycomposeui_hot_reloader.src.main.server.server import *
+from ..server.server import *
 import uvicorn
 import os
 

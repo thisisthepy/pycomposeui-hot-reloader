@@ -16,7 +16,7 @@ class FileModificationEventPublisher(FileSystemEventHandler):
         self.directory_to_watch = directory_to_watch
         self.zipfile_dir = zipfile_dir
         self.event_channel = event_channel
-        # self.current_event = None
+       # self.current_event = None
         self.current_event = asyncio.Future()
 
     def on_any_event(self, event):
@@ -26,14 +26,15 @@ class FileModificationEventPublisher(FileSystemEventHandler):
                 # Take actions for tracking changes of a file.
                 print(f'Changed file information: {event.src_path}')
                 print(f'directory_to_watch: {self.directory_to_watch}')
-                print(f'The OS which has been modified : [{event_dir}]')
 
-                rel_event_dir = event.src_path.replace(current_path, '')[1:]
+                rel_event_dir = event.src_path.replace(self.directory_to_watch, '')[1:]
                 event_dir = 'common'
+
                 for os in self.os_list:
                     if os in rel_event_dir:
                         event_dir = os
 
+                print(f'The OS which has been modified : [{event_dir}]')
                 self.current_event.set_result({'src_path': event.src_path,
                                                'os_tag': event_dir,
                                                'event_type': event.event_type,
@@ -125,3 +126,4 @@ async def start_monitoring(os_list: list, directory_to_watch: str, zipfile_dir: 
     observer.start()
 
     return await event_handler.current_event
+

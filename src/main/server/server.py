@@ -3,10 +3,9 @@ import sys
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import HTMLResponse, FileResponse
 import asyncio
-import threading
 
-from pycomposeui_hot_reloader.src.main.server.observer import start_monitoring
-
+#from .src.main.server.observer import start_monitoring
+from .observer import start_monitoring
 
 async def send_file_change_info(current_event, ws_connections: dict):
     """This Function makes the server send the change information to clients
@@ -29,7 +28,7 @@ async def send_file_and_close(ws: WebSocket, current_event):
     await ws.close()
 
 async def on_startup(directory_to_watch: str, os_list: list, zipfile_dir: str,
-                     ws_connections: dict):
+               ws_connections: dict):
     """This Function goes up when the server has been called."""
     #event_finished = asyncio.Event() # Event to synchronize tasks
     current_event = await start_monitoring(os_list=os_list, directory_to_watch=directory_to_watch,
@@ -76,8 +75,8 @@ def start_reloading(directory_to_watch: str = None, zipfile_dir: str = None, os_
 
     app.add_event_handler("startup",
                           lambda: asyncio.create_task(on_startup(directory_to_watch=directory_to_watch,
-                                                                 os_list=os_list, zipfile_dir=zipfile_dir,
-                                                                 ws_connections=ws_connections)))
+                                             os_list=os_list, zipfile_dir=zipfile_dir,
+                                             ws_connections=ws_connections)))
 
 
     @app.websocket("/ws")
