@@ -1,31 +1,36 @@
+import os
+import sys
+import zipfile
 import asyncio
-
+import traceback
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
-import os
-import zipfile
 
 
 class FileModificationEventPublisher(FileSystemEventHandler):
     """Class to detect filesystem change events and Create its message to channel"""
     def __init__(self,
                  os_list: list, directory_to_watch: str, zipfile_dir: str,
-                 event_channel):
+                 event_channel, loop):
         super().__init__()
         self.os_list = os_list
         self.directory_to_watch = directory_to_watch
         self.zipfile_dir = zipfile_dir
         self.event_channel = event_channel
-       # self.current_event = None
         self.current_event = asyncio.Future()
+        self.loop = loop
 
     def on_any_event(self, event):
+        #asyncio.create_task(self.handle_event(event=event))
+        asyncio.run_coroutine_threadsafe(self.handle_event(event), self.loop)
+
+    async def handle_event(self, event):
         """Handles any filesystem event Except Opening and Closing"""
         if event.event_type != 'opened' and event.event_type != 'closed':
             if not '~' in event.src_path:
                 # Take actions for tracking changes of a file.
-                print(f'Changed file information: {event.src_path}')
-                print(f'directory_to_watch: {self.directory_to_watch}')
+                sys.stdout.write(f'Changed file information: {event.src_path}\n')
+                sys.stdout.write(f'directory_to_watch: {self.directory_to_watch}\n')
 
                 rel_event_dir = event.src_path.replace(self.directory_to_watch, '')[1:]
                 event_dir = 'common'
@@ -34,11 +39,13 @@ class FileModificationEventPublisher(FileSystemEventHandler):
                     if os in rel_event_dir:
                         event_dir = os
 
-                print(f'The OS which has been modified : [{event_dir}]')
+                sys.stdout.write(f'The OS which has been modified : [{event_dir}]')
                 self.current_event.set_result({'src_path': event.src_path,
                                                'os_tag': event_dir,
                                                'event_type': event.event_type,
                                                'dir_flag': event.is_directory})
+                self.current_event = asyncio.Future()  # Reset current_event to track future events
+
                 if event_dir in self.os_list:
                     self.event_channel.trigger_event(event_dir,
                                                      target_os=event_dir,
@@ -52,9 +59,11 @@ class FileModificationEventPublisher(FileSystemEventHandler):
                                                          zipfile_dir=self.zipfile_dir)
 
                 else:
-                    print(f'[Unknown OS Error] The directory that has not been saved as OS was found: {event_dir}.')
-                    print(f'The Tracked file is {event.src_path}.')
-                    print(f'The event type is {event.event_type}.')
+                    sys.stderr.write(f'[Unknown OS Error] The directory that has not been saved as OS was found: {event_dir}.\n')
+                    sys.stdout.write(f'The Tracked file is {event.src_path}.\n')
+                    sys.stdout.write(f'The event type is {event.event_type}.\n')
+                    return traceback.format_exc()
+
 
 
 class FileModificationEventChannel:
@@ -72,25 +81,19 @@ class FileModificationEventChannel:
             for handler in self.event_handlers[event_name]:
                 handler(*args, **kwargs)
         else:
-            print(f'The event ({event_name}) is not on the list of event handlers.')
-            print(f'Please check the process to create list. The current list is {self.event_handlers.keys()}.')
-
+            sys.stdout.write(f'The event ({event_name}) is not on the list of event handlers.\n')
+            sys.stdout.write(f'Please check the process to create list. The current list is {self.event_handlers.keys()}.\n')
+            return traceback.format_exc()
 
 def make_zip(target_os: str, directory_to_watch: str, zipfile_dir: str):
     """Make a zipfile which is composed with files in 'common' and target directory."""
 
-    if "\\" in zipfile_dir:
-        zipfile_dir += "\\zip_files"
-        file_name = f'{zipfile_dir}\\{target_os}.zip'
-
-    elif "/" in zipfile_dir:
-        zipfile_dir += "/zip_files"
-        file_name = f'{zipfile_dir}/{target_os}.zip'
+    zipfile_dir = os.path.join(zipfile_dir, 'zip_files')
+    file_name = os.path.join(zipfile_dir, f'{target_os}.zip')
 
     if not os.path.exists(zipfile_dir):
         # if there is no directory in the path, especially initializing, make the directory to store the zipFiles
         os.mkdir(zipfile_dir)
-
 
     zipped_dir = zipfile.ZipFile(file_name, 'w')
 
@@ -105,8 +108,7 @@ def make_zip(target_os: str, directory_to_watch: str, zipfile_dir: str):
                         os.path.relpath(path, directory_to_watch), file),
                         compress_type=zipfile.ZIP_DEFLATED)
     zipped_dir.close()
-
-    print(f'INFO:  Packaging the zipped files for {target_os} has just been completed!')
+    sys.stdout.write(f'INFO:  Packaging the zipped files for {target_os} has just been completed!\n')
 
 
 async def start_monitoring(os_list: list, directory_to_watch: str, zipfile_dir: str):
@@ -117,9 +119,12 @@ async def start_monitoring(os_list: list, directory_to_watch: str, zipfile_dir: 
     for os_name in os_list:
         event_channel.add_event_handler(os_name, make_zip)
 
+    loop = asyncio.get_running_loop()
+
     # Create the event handler with the callback function.
     event_handler = FileModificationEventPublisher(os_list=os_list, directory_to_watch=directory_to_watch,
-                                                   zipfile_dir=zipfile_dir, event_channel=event_channel)
+                                                   zipfile_dir=zipfile_dir, event_channel=event_channel,
+                                                   loop=loop)
 
     observer = Observer()
     observer.schedule(event_handler, directory_to_watch, recursive=True)
