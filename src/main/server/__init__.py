@@ -13,8 +13,10 @@ with open(config_path, 'r') as f:
 watch_dirs = settings_toml['user']['directories_to_watch']
 zipfile_dir = settings_toml['user']['zipfile_dir']
 exception_dir = settings_toml['user']['exception_dir']
+os_named = settings_toml['user']['os_named']
 host = settings_toml['server']['host']
-port = settings_toml['server']['port']
+port = int(settings_toml['server']['port'])
+
 for index, arg in enumerate(sys.argv):
     if arg == "-w":
         watch_dirs.append(abspath(sys.argv[index+1]))
@@ -26,4 +28,4 @@ if len(watch_dirs) == 0:
     if not zipfile_dir:
         zipfile_dir = os.path.abspath(os.path.join(watch_dirs[0], os.pardir))
 
-run_server(directories_to_watch=watch_dirs, zipfile_dir=zipfile_dir, os_named=False, host=host, port=port)
+run_server(directories_to_watch=watch_dirs, zipfile_dir=zipfile_dir, os_named=os_named, host=host, port=port)

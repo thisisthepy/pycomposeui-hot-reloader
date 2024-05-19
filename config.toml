@@ -2,6 +2,8 @@
 directories_to_watch = []
 exception_dir = false
 zipfile_dir = false
+os_named = false
+
 [server]
 host = '0.0.0.0'
 port = '8000'
