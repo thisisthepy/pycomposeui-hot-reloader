@@ -1,10 +1,9 @@
 import uvicorn
-import logging
-import os
 from ..server.server import *
 
+
 def run_server(directories_to_watch: list = None, exception_dir: list = None, zipfile_dir: str = None,
-               os_named = True, os_list: list = None, os_exception_list: list = None,
+               os_named=True, os_list: list = None, os_exception_list: list = None,
                host: str = "0.0.0.0", port: int = 8000):
     """This function is used to initialize the circumstances of reloading.
 
@@ -26,16 +25,16 @@ def run_server(directories_to_watch: list = None, exception_dir: list = None, zi
     if os_list is None:  # Populate the os_list with directories that are not in the exception_list.
         os_list = []
         if os_named:
-            for dir in directories_to_watch:
-                if os.path.isdir(dir):
-                    tmp_name = os.path.basename(dir)
+            for item in directories_to_watch:
+                if os.path.isdir(item):
+                    tmp_name = os.path.basename(item)
                     if tmp_name not in os_exception_list:
-                        os_list.append(dir_name)
+                        os_list.append(tmp_name)
 
         else:
-            for dir in directories_to_watch:
-                for item in os.listdir(dir):
-                    sub_folder = os.path.join(dir, item)
+            for _dir in directories_to_watch:
+                for item in os.listdir(_dir):
+                    sub_folder = os.path.join(_dir, item)
                     print(f'Checking current directories.... : {sub_folder}')
                     dir_name = item.replace('Main', '')
                     print(f'A current dir_name is {dir_name}.')
