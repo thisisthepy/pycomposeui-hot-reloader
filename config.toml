@@ -1,0 +1,7 @@
+[user]
+directories_to_watch = []
+exception_dir = false
+zipfile_dir = false
+[server]
+host = '0.0.0.0'
+port = '8000'
