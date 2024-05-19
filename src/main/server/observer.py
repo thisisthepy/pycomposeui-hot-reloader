@@ -41,6 +41,7 @@ class FileModificationEventPublisher(PatternMatchingEventHandler):
     """Class to detect filesystem change events and Create its message to channel"""
     def __init__(self,
                  os_list: list, directories_to_watch: list, zipfile_dir: str,
+                 default_name_tail: str, base_directory: str,
                  event_channel, loop,
                  patterns=None, ignore_patterns=None, ignore_directories=False, case_sensitive=True):
 
@@ -49,6 +50,8 @@ class FileModificationEventPublisher(PatternMatchingEventHandler):
         self.directories_to_watch = directories_to_watch
         self.zipfile_dir = zipfile_dir
         self.event_channel = event_channel
+        self.base_directory = base_directory
+        self.default_name_tail = default_name_tail
         self.current_event = asyncio.Future()
         self.loop = loop
 
@@ -71,7 +74,7 @@ class FileModificationEventPublisher(PatternMatchingEventHandler):
                     if _dir in event.src_path:
                         target_dir = event.src_path.replace(_dir, '')[1:]
 
-                event_dir = 'common'
+                event_dir = self.base_directory
 
                 for os_name in self.os_list:
                     if os_name in target_dir:
@@ -89,13 +92,17 @@ class FileModificationEventPublisher(PatternMatchingEventHandler):
                     self.event_channel.trigger_event(event_dir,
                                                      target_os=event_dir,
                                                      directories_to_watch=self.directories_to_watch,
-                                                     zipfile_dir=self.zipfile_dir)
-                elif event_dir == 'common':
+                                                     zipfile_dir=self.zipfile_dir,
+                                                     base_directory=self.base_directory,
+                                                     default_name_tail=self.default_name_tail)
+                elif event_dir == self.base_directory:
                     for os in self.os_list:
                         self.event_channel.trigger_event(os,
                                                          target_os=os,
                                                          directories_to_watch=self.directories_to_watch,
-                                                         zipfile_dir=self.zipfile_dir)
+                                                         zipfile_dir=self.zipfile_dir,
+                                                         base_directory=self.base_directory,
+                                                         default_name_tail=self.default_name_tail)
 
                 else:
                     sys.stderr.write(f'[Unknown OS Error] The directory that has not been saved as OS was found: '
@@ -126,8 +133,9 @@ class FileModificationEventChannel:
             return traceback.format_exc()
 
 
-def make_zip(target_os: str, directories_to_watch: list, zipfile_dir: str):
-    """Make a zipfile which is composed with files in 'common' and target directory."""
+def make_zip(target_os: str, directories_to_watch: list, zipfile_dir: str,
+             default_name_tail: str = '', base_directory: str = ''):
+    """Make a zipfile which is composed with files in base directory and target directory."""
 
     zipfile_dir = os.path.join(zipfile_dir, 'zip_files')
     file_name = os.path.join(zipfile_dir, f'{target_os}.zip')
@@ -137,10 +145,14 @@ def make_zip(target_os: str, directories_to_watch: list, zipfile_dir: str):
         os.mkdir(zipfile_dir)
 
     zipped_dir = zipfile.ZipFile(file_name, 'w')
+    if default_name_tail in base_directory:
+        base_keyword = base_directory
+    else:
+        base_keyword = base_directory + default_name_tail
 
     for directory_to_watch in directories_to_watch:
         for (path, _, files) in os.walk(directory_to_watch):
-            if target_os in path or 'commonMain' in path:
+            if target_os in path or base_keyword in path:
                 os.chdir(directory_to_watch)
                 for file in files:
                     if "~" in path:
@@ -152,13 +164,16 @@ def make_zip(target_os: str, directories_to_watch: list, zipfile_dir: str):
     sys.stdout.write(f'INFO:  Packaging the zipped files for {target_os} has just been completed!\n')
 
 
-async def start_monitoring(os_list: list, directories_to_watch: list, exception_dir: list, zipfile_dir: str):
+async def start_monitoring(os_list: list, directories_to_watch: list, exception_dir: list, zipfile_dir: str,
+                           default_name_tail: str = '', base_directory: str = ''):
     """Starts tracking the directories
         Args:
             os_list (list): This saves the list of OS.
             directories_to_watch (list): This determines the directories to be watched.
             exception_dir (list): This determines the directories not to be watched.
             zipfile_dir (str): This determines the directory to save the zipped files.
+            base_directory (str): This indicates the basic directory which need to all OS.
+            default_name_tail (str): This indicates the tail of directory name that always follows.
         Return:
             current_event (dict) : This saves the information about file change.
     """
@@ -172,6 +187,7 @@ async def start_monitoring(os_list: list, directories_to_watch: list, exception_
     # Create the event handler with the callback function.
     event_handler = FileModificationEventPublisher(os_list=os_list, directories_to_watch=directories_to_watch,
                                                    zipfile_dir=zipfile_dir, event_channel=event_channel,
+                                                   base_directory=base_directory, default_name_tail=default_name_tail,
                                                    loop=loop, ignore_patterns=exception_dir)
 
     observer = Observer()

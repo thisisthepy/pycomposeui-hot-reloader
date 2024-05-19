@@ -1,8 +1,12 @@
 [user]
-directories_to_watch = []
-exception_dir = false
-zipfile_dir = false
+directories_to_watch = ['\your\path']
+exception_dir = ['\your\path',
+    '\your\path']
+zipfile_dir = '\your\path'
 os_named = false
+os_exception_list = ['common', '__pycache__', 'zip_files']
+base_directory = 'common'
+default_name_tail = 'Main'
 
 [server]
 host = '0.0.0.0'
