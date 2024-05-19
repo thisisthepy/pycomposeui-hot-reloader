@@ -5,7 +5,7 @@ from os.path import abspath
 from ..server.main import run_server
 
 script_path = os.path.dirname(__file__)
-config_path = abspath(os.path.join(script_path, '../../../config.toml'))
+config_path = abspath(os.path.join(script_path, '..', '..', '..', 'config.toml'))
 
 with open(config_path, 'r') as f:
     settings_toml = toml.load(f)
