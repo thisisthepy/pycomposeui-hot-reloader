@@ -19,9 +19,6 @@ def run_server(directories_to_watch: list = None, exception_dir: list = None, zi
             port (int):  (Optional) This determines the port of the FastAPI.  Initialized as "8000"
     """
 
-    if os_exception_list is None:
-        os_exception_list = ["common", "__pycache__", "zip_files"]
-
     if os_list is None:  # Populate the os_list with directories that are not in the exception_list.
         os_list = []
         if os_named:

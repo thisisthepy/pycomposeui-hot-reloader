@@ -88,13 +88,13 @@ class FileModificationEventPublisher(PatternMatchingEventHandler):
                 if event_dir in self.os_list:
                     self.event_channel.trigger_event(event_dir,
                                                      target_os=event_dir,
-                                                     directory_to_watch=target_dir,
+                                                     directories_to_watch=self.directories_to_watch,
                                                      zipfile_dir=self.zipfile_dir)
                 elif event_dir == 'common':
                     for os in self.os_list:
                         self.event_channel.trigger_event(os,
                                                          target_os=os,
-                                                         directory_to_watch=target_dir,
+                                                         directories_to_watch=self.directories_to_watch,
                                                          zipfile_dir=self.zipfile_dir)
 
                 else:
@@ -126,7 +126,7 @@ class FileModificationEventChannel:
             return traceback.format_exc()
 
 
-def make_zip(target_os: str, directory_to_watch: str, zipfile_dir: str):
+def make_zip(target_os: str, directories_to_watch: list, zipfile_dir: str):
     """Make a zipfile which is composed with files in 'common' and target directory."""
 
     zipfile_dir = os.path.join(zipfile_dir, 'zip_files')
@@ -138,16 +138,16 @@ def make_zip(target_os: str, directory_to_watch: str, zipfile_dir: str):
 
     zipped_dir = zipfile.ZipFile(file_name, 'w')
 
-    for (path, _, files) in os.walk(directory_to_watch):
-        if target_os in path or 'commonMain' in path:
-            os.chdir(directory_to_watch)
-            for file in files:
-                if "~" in path:
-                    pass
-                else:
-                    zipped_dir.write(os.path.join(
-                        os.path.relpath(path, directory_to_watch), file),
-                        compress_type=zipfile.ZIP_DEFLATED)
+    for directory_to_watch in directories_to_watch:
+        for (path, _, files) in os.walk(directory_to_watch):
+            if target_os in path or 'commonMain' in path:
+                os.chdir(directory_to_watch)
+                for file in files:
+                    if "~" in path:
+                        pass
+                    else:
+                        zipped_dir.write(os.path.join(os.path.relpath(path, directory_to_watch), file),
+                                         compress_type=zipfile.ZIP_DEFLATED)
     zipped_dir.close()
     sys.stdout.write(f'INFO:  Packaging the zipped files for {target_os} has just been completed!\n')
 
@@ -169,7 +169,6 @@ async def start_monitoring(os_list: list, directories_to_watch: list, exception_
         event_channel.add_event_handler(os_name, make_zip)
 
     loop = asyncio.get_running_loop()
-
     # Create the event handler with the callback function.
     event_handler = FileModificationEventPublisher(os_list=os_list, directories_to_watch=directories_to_watch,
                                                    zipfile_dir=zipfile_dir, event_channel=event_channel,
