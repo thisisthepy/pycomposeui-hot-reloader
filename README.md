@@ -17,7 +17,7 @@ c. Update the application in the background
 
 ## Features
 - **Automatic Reloading**: Detects changes in the source code and reloads the UI seamlessly.
-- **Configurable Watcher**: Allows customization of the directories and file types to monitor.
+- **Configurable Watcher**: Allows customization of the directories.
 - **Minimal Setup**: Easy integration with existing PyComposeUI projects.
 
 ## Installation
