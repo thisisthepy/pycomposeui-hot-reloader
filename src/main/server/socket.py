@@ -5,7 +5,7 @@ from src.main.server.observer import start_monitoring
 
 
 def handle_client(client_socket, address):
-    """Handles communication with a client."""
+    """Handles communication with a main.client.commonMain.kotlin.getClient."""
     try:
         print(f'New connection from {address}')
         while True:
@@ -16,7 +16,7 @@ def handle_client(client_socket, address):
             # Process received data here
             print(f'Received data from {address}: {data.decode()}')
     except Exception as e:
-        print(f'Error handling client {address}: {e}')
+        print(f'Error handling main.client.commonMain.kotlin.getClient {address}: {e}')
     finally:
         client_socket.close()
 
@@ -28,9 +28,9 @@ def send_file_change_info(current_event, socket_connections: dict):
         for client_socket in list(socket_connections.values()).copy():
             try:
                 client_socket['socket'].send(message.encode())
-                print(f'The event {current_event} was sent to ({len(socket_connections)}) client(s).')
+                print(f'The event {current_event} was sent to ({len(socket_connections)}) main.client.commonMain.kotlin.getClient(s).')
             except Exception as e:
-                print(f'Error sending message to client: {e}')
+                print(f'Error sending message to main.client.commonMain.kotlin.getClient: {e}')
 
 
 def set_up_server():
@@ -39,12 +39,12 @@ def set_up_server():
     server_socket.bind(('127.0.0.1', 8000))
     server_socket.listen()
 
-    socket_connections = {}  # Dictionary to store client connections
+    socket_connections = {}  # Dictionary to store main.client.commonMain.kotlin.getClient connections
 
     try:
         while True:
             client_socket, address = server_socket.accept()
-            # Create a new thread to handle each client
+            # Create a new thread to handle each main.client.commonMain.kotlin.getClient
             client_thread = threading.Thread(target=handle_client, args=(client_socket, address))
             client_thread.start()
             socket_connections[address] = {'socket': client_socket, 'information_sent': False}

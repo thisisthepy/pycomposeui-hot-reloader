@@ -55,7 +55,7 @@ async def on_startup(directories_to_watch: list, zipfile_dir: str, os_list: list
 def start_reloading(directories_to_watch: list = None, zipfile_dir: str = None, os_list: list = None,
                     current_event: dict = None, exception_dir: list = None,
                     default_name_tail: str = '', base_directory: str = ''):
-    """This function is used to run the server and main processes.
+    """This function is used to run the server and main.client.commonMain.kotlin.main processes.
         Args:
             directories_to_watch (list): This determines the directory to be watched.
             zipfile_dir (str): This determines the directories to save the zipped files.
@@ -81,7 +81,7 @@ def start_reloading(directories_to_watch: list = None, zipfile_dir: str = None, 
             Args:
                 current_event (dict): This saves the information about file changes.
                 zipfile_dir (str): This determines the directory to save the zipped files.
-                os_name (str): This indicates the type of client which whill receive the file.
+                os_name (str): This indicates the type of main.client.commonMain.kotlin.getClient which whill receive the file.
             Return: None
         """
         zip_filename = os_name + '.zip'
@@ -99,14 +99,14 @@ def start_reloading(directories_to_watch: list = None, zipfile_dir: str = None, 
             index_template = "\n".join(index_template)
         return HTMLResponse(index_template)
 
-    @app.get("/client/{os_name}")
+    @app.get("/main.client.commonMain.kotlin.client/{os_name}")
     async def register_client(os_name: str):
         """Register Client at the client_connections and asyncio.Queue"""
         client_connections = await connection_manager.get_client_connections()
         connections_os_list = list(client_connections.keys())
 
         if os_name in os_list:
-            sys.stdout.write(f'INFO: {os_name} client is trying to connect to the server.\n')
+            sys.stdout.write(f'INFO: {os_name} main.client.commonMain.kotlin.getClient is trying to connect to the server.\n')
             if os_name not in connections_os_list:
                 await connection_manager.add_os(os_name=os_name)
             queue = asyncio.Queue()
@@ -126,17 +126,17 @@ def start_reloading(directories_to_watch: list = None, zipfile_dir: str = None, 
 
         else:
             raise HTTPException(status_code=404,
-                                detail="The client's os name is not registered during the initialization process.")
+                                detail="The main.client.commonMain.kotlin.getClient's os name is not registered during the initialization process.")
 
-    @app.get("/client/{os_name}/zip")
+    @app.get("/main.client.commonMain.kotlin.client/{os_name}/zip")
     async def os_zip(os_name: str):
-        """Enable client to download the newest zip file."""
+        """Enable main.client.commonMain.kotlin.getClient to download the newest zip file."""
         if os_name in os_list:
             paths = [zipfile_dir, 'zip_files', f'{os_name}.zip']
             return FileResponse(path=os.path.join(*paths), filename=f"{os_name}.zip")
 
         else:
             raise HTTPException(status_code=404,
-                                detail="The client's os name is not registered during the initialization process.")
+                                detail="The main.client.commonMain.kotlin.getClient's os name is not registered during the initialization process.")
 
     return app
