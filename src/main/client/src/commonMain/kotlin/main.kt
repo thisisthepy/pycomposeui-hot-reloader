@@ -36,7 +36,7 @@ class SocketClient {
 
 fun main() = runBlocking {
     launch {
-        reloadApplication(host = "172.17.176.1", port = 8000, pathInfo = "/client/", clientType = "android", appExtension = "zip")
+        reloadApplication(host = "localhost", port = 8000, pathInfo = "/client/", clientType = "android", appExtension = "zip")
     }
     while (true) {
         /* the place to run the main function of the application */
